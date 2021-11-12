@@ -10,6 +10,34 @@ const tours = JSON.parse(fs.readFileSync(`${__dirname}/../dev-data/data/tours-si
 //---------------------------------------------------------------------------------------------------------------//
 //Since we want to export all of these functions, we put them in the exports object:
 
+//Since all of our functions that use the tour.id have to check to see if its valid, we can ecapsulate that into a param middleware, which will only run if in the url contains the certain param, in this case, the :id
+
+//So we get the 3 arguments for noraml middlleware, but also a fourth that will hold the value of the param. Example /api/v1/tours/5 the fourth argument will be 5, since is the id the user typed in:
+exports.checkID = (req, res, next, value) => {
+	console.log(`Tour id is: ${value}`);
+	//Checking if the id the user input is valid:
+	if (value > tours.length) {
+		return res.status(404).json({
+			status: "fail",
+			message: "Invalid ID",
+		});
+	}
+	next();
+};
+
+//Middleware to check if the POST tour body contains the information we need:
+exports.checkBody = (req, res, next) => {
+	if (!req.body.name || !req.body.price) {
+		return res.status(400).json({
+			status: "fail",
+			message: "missing properties",
+		});
+	}
+	next();
+};
+
+//---------------------------------------------------------------------------------------------------------------//
+
 //Separete handler functions to take care of the routes:
 exports.getAllTours = (req, res) => {
 	res.status(200).json({
@@ -35,15 +63,6 @@ exports.getTour = (req, res) => {
 
 	//Using the find method to get the correct tour from the array:
 	const tour = tours.find((el) => el.id === id);
-
-	//Checking if the id the user input is valid:
-	// if (id > tours.length) {
-	if (!tour) {
-		return res.status(404).json({
-			status: "fail",
-			message: "Invalid ID",
-		});
-	}
 
 	res.status(200).json({
 		status: "success",

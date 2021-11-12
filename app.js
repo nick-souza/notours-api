@@ -20,6 +20,9 @@ app.use(morgan("dev"));
 //Just a function tha can modify the incoming data:
 app.use(express.json());
 
+//Middleware to serve static files, like the overview.html in the public folder:
+app.use(express.static(`${__dirname}/public`));
+
 //Creating our own global middleware, when defined at the top, it will execute between all requests:
 app.use((req, res, next) => {
 	//Creating a new date when the request is made, and converting to ISOString:
