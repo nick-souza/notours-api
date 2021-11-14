@@ -56,6 +56,8 @@ const tourSchema = new mongoose.Schema({
 		type: Date,
 		//Using the date.now to get a timestamp of when the tour is created:
 		default: Date.now(),
+		//Using the select property to automatically hide this property, so the user would not have access to it. Useful for sensitive data:
+		select: false,
 	},
 	//Array containing all the possible start dates for a tour:
 	startDates: [Date],

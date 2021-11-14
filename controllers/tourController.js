@@ -36,12 +36,44 @@ exports.getAllTours = async (req, res) => {
 		//Now removing these fields from the obj copy, so we can use for the filter:
 		excludedFields.forEach((el) => delete queryObj[el]);
 
+		//Now for using operators inside the query, like { duration: { $gt: 5 } }. In the URL we type: ?duration[gte]=5. So we need to convert it to the mongoDB operator by adding the $ sign.
+		//First, converting the queryObj to string, then using the replace method:
+		let queryStr = JSON.stringify(queryObj);
+		//Using regular expression to check if any of these words are in the query, and if they are, using the callback funciton to replace by adding the $ sign in front of it. And if they are not present, it will just be ignored:
+		queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`);
+
 		//So the other fields will be ignored for the filtering
 		//Also, to be able to chain methods for like, sorting and pagination, we need to first build the query, and only then await it:
-		const query = Tour.find(queryObj);
+		//And we have the parse the string to object again
+		let query = Tour.find(JSON.parse(queryStr));
+
+		//Implementing sorting. If the user wants to show the lower prices first. And since the query above also returns a query, we can just chain it using the original query object, the one where sort was not excluded:
+		if (req.query.sort) {
+			//So if the sort object is present in the original query obj, use this query instead:
+
+			//In case there is objects with the same property, we can specify additional arguments to which sort them. Example, if there is two tours with the same price, we can sort these two by the rating Average for example.
+			//And the way mongoose implements this: .sort("price ratingsAverage").
+			//But we cannot have spaces in the URL, so we use commas. ?sort=price,ratingsAverage; So we need to replace the commas with space:
+			const sortBy = req.query.sort.split(",").join(" ");
+			// console.log(sortBy);
+			query = query.sort(sortBy);
+		} else {
+			//Adding a default, in case the user does not specify any sorting:
+			query = query.sort("-createdAt");
+		}
+
+		//Implementing Field Limiting. In the URL it looks like: ?fields=name,duration,difficulty,price; So for mongoose we have to replace the commas with spaces:
+		if (req.query.fields) {
+			const fields = req.query.fields.split(",").join(" ");
+			query = query.select(fields);
+		} else {
+			//Default:
+			//Using the minus (-) operator to exclude a field. In this default case, the __v, which is a property that mongoose automatically creates for internal use. But we dont need it, so we just hide it using the minus:
+			query = query.select("-__v");
+		}
 
 		//And now execute the query:
-		const tour = await query;
+		const tours = await query;
 
 		res.status(200).json({
 			//Inside the object, also sending the status if its a sucess or fail:
@@ -57,7 +89,7 @@ exports.getAllTours = async (req, res) => {
 	} catch (error) {
 		res.status(404).json({
 			status: "fail",
-			message: "error",
+			message: error.message,
 		});
 	}
 };
