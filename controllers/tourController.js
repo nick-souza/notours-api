@@ -72,6 +72,24 @@ exports.getAllTours = async (req, res) => {
 			query = query.select("-__v");
 		}
 
+		//Implementing Pagination and Limit. In the URL it would look like ?page=1&limit=10. With mongoose we use skip().limit(). Where limit is the same in the query string, the amount of results we want, and skip is the amount of results that should be skipped, before querying for the data.
+		//So for the query ?page=2&limit=10 meaning that results 1-10 are on page 1, and 11-20 are on page 2. So the formula for the skip is: (page - 1) * limit;
+
+		//Getting the page and the limit values from the query:
+		const page = req.query.page * 1 || 1; //Multiplying by one to convert to a number, and setting the default for page 1;
+		const limit = req.query.limit * 1 || 50; //Multiplying by one to convert to a number, and setting the default for 50 at a page;
+		//Now using the formula for the pagination:
+		const skip = (page - 1) * limit;
+		//Building the query:
+		query = query.skip(skip).limit(limit);
+
+		//in case the user requested a page that does not exist:
+		if (req.query.page) {
+			//Method to get the number of all documetns in the database:
+			const numTours = await Tour.countDocuments();
+			if (skip >= numTours) throw new Error("Page does not exist");
+		}
+
 		//And now execute the query:
 		const tours = await query;
 
