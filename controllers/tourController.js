@@ -15,8 +15,33 @@ const Tour = require("./../models/tourModel");
 //Separete handler functions to take care of the routes:
 exports.getAllTours = async (req, res) => {
 	try {
-		//Awaiting the method from the instance Tour of the model:
-		const tours = await Tour.find();
+		/*
+			Implementing filtering, using the parameters the user typed in the URL. Example: /api/v1/tours?difficulty=easy the req.query would be { difficulty: "easy" };
+			In MongoDB we would usually filter using queries like this:
+			const tours = await Tour.find({
+				duration: 5,
+				difficulty: "easy",
+			});
+
+			But we can use mongoose to chain the methods:
+			const tour = await Tour.find().where("duration").equals(5).where("difficulty").equals("easy";)
+			
+			But since we get an object back from the req.query, we can use the first one:
+		*/
+		//However, we need to exclude some fields from the query, for example the ?page=2 which is only used for the pagination. So we need to create a shallow copy of the req.query object, and remove those if present:
+		const queryObj = { ...req.query };
+
+		//Array with the query we want to exclude from the filter:
+		const excludedFields = ["page", "sort", "limit", "fields"];
+		//Now removing these fields from the obj copy, so we can use for the filter:
+		excludedFields.forEach((el) => delete queryObj[el]);
+
+		//So the other fields will be ignored for the filtering
+		//Also, to be able to chain methods for like, sorting and pagination, we need to first build the query, and only then await it:
+		const query = Tour.find(queryObj);
+
+		//And now execute the query:
+		const tour = await query;
 
 		res.status(200).json({
 			//Inside the object, also sending the status if its a sucess or fail:
@@ -98,9 +123,18 @@ exports.updateTour = async (req, res) => {
 	}
 };
 
-exports.deleteTour = (req, res) => {
-	res.status(204).json({
-		status: "success",
-		message: "deleted",
-	});
+exports.deleteTour = async (req, res) => {
+	try {
+		await Tour.findByIdAndDelete(req.params.id);
+
+		res.status(204).json({
+			status: "success",
+			data: null,
+		});
+	} catch (error) {
+		res.status(404).json({
+			status: "fail",
+			message: error.message,
+		});
+	}
 };

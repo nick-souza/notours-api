@@ -10,15 +10,55 @@ const tourSchema = new mongoose.Schema({
 		required: [true, "A tour must have a name."],
 		unique: true,
 	},
+	duration: {
+		type: Number,
+		required: [true, "A tour must have a duration"],
+	},
+	maxGroupSize: {
+		type: Number,
+		required: [true, "A tour must have a group size"],
+	},
+	difficulty: {
+		type: String,
+		required: [true, "A tour must have a dificulty"],
+	},
 	//Defining the properties and their types, using native javascript types:
-	rating: {
+	ratingsAverage: {
 		type: Number,
 		default: 4.5,
+	},
+	ratingsQuantity: {
+		type: Number,
+		defualt: 0,
 	},
 	price: {
 		type: Number,
 		required: [true, "A tour must have a price."],
 	},
+	priceDiscount: Number,
+	summary: {
+		type: String,
+		//Using trim to remove the whitespaces
+		trim: true,
+		required: [true, "A tour must have a description"],
+	},
+	description: {
+		type: String,
+		trim: true,
+	},
+	imageCover: {
+		type: String,
+		required: [true, "A tour must have a cover image"],
+	},
+	//The tipy is an array of strings, containing the url for the images:
+	images: [String],
+	createdAt: {
+		type: Date,
+		//Using the date.now to get a timestamp of when the tour is created:
+		default: Date.now(),
+	},
+	//Array containing all the possible start dates for a tour:
+	startDates: [Date],
 });
 
 //Now that we have the schema, we can create the model out of it, using the name always uppercase, and passing in the schema name:
