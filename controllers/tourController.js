@@ -96,6 +96,8 @@ exports.updateTour = async (req, res) => {
 			//The third argument can be the options;
 			//Using the new = true, the new updated document is gonna be returned:
 			new: true,
+
+			//Option to use the validators specified in the model:
 			runValidators: true,
 		});
 

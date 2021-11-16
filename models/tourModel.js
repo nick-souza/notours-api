@@ -1,5 +1,7 @@
 const mongoose = require("mongoose");
 const slugify = require("slugify");
+//Library that has custom validators:
+const validator = require("validator");
 
 //Creating the schema for the tours, using the moongose.Schema constructor passing in an object in the parameter:
 //Defining the de fields and doing some validation;
@@ -9,8 +11,13 @@ const tourSchema = new mongoose.Schema(
 		name: {
 			type: String,
 			//In the required field, we can just pass the boolean, or pass an array with the boolean and the error message in case it requirements are not met:
-			required: [true, "A tour must have a name."],
 			unique: true,
+			//Validation Fields:
+			required: [true, "A tour must have a name."],
+			maxlength: [40, "A tour name must have less or equal than 40 characters."],
+			minlength: [10, "A tour name must have more or equal than 10 characters."],
+			//Using the library to check if the name is all letters:
+			// validate: [validator.isAlpha, "A tour name must contain letters only"],
 		},
 		//Property that will be filled after inserting a document, and then the mongoose middleware will be called:
 		slug: String,
@@ -24,12 +31,21 @@ const tourSchema = new mongoose.Schema(
 		},
 		difficulty: {
 			type: String,
+			//Validators:
 			required: [true, "A tour must have a dificulty"],
+			//Since we only want three possibilities for the difficulty, we can use Enums:
+			enum: {
+				values: ["easy", "medium", "difficult"],
+				message: "Difficulty is either: easy, medium, or difficult.",
+			},
 		},
 		//Defining the properties and their types, using native javascript types:
 		ratingsAverage: {
 			type: Number,
 			default: 4.5,
+			//Validators:
+			min: [1, "Rating must be above 1.0"],
+			max: [5, "Rating must be below 5.0"],
 		},
 		ratingsQuantity: {
 			type: Number,
@@ -39,7 +55,18 @@ const tourSchema = new mongoose.Schema(
 			type: Number,
 			required: [true, "A tour must have a price."],
 		},
-		priceDiscount: Number,
+		priceDiscount: {
+			type: Number,
+			//Adding custom validators:
+			validate: {
+				validator: function (value) {
+					//Callback function to check if the discount is less the the actual price. So returning true or false;
+					//However, this function will not work when updating a document;
+					return value < this.price;
+				},
+				message: "Discount price ({VALUE}) should be less than the regular price.",
+			},
+		},
 		summary: {
 			type: String,
 			//Using trim to remove the whitespaces
