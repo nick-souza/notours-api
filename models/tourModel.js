@@ -1,7 +1,5 @@
 const mongoose = require("mongoose");
 const slugify = require("slugify");
-//Library that has custom validators:
-const validator = require("validator");
 
 //Creating the schema for the tours, using the moongose.Schema constructor passing in an object in the parameter:
 //Defining the de fields and doing some validation;
