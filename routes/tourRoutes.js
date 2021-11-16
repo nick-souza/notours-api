@@ -18,6 +18,12 @@ const router = express.Router();
 //We can achieve that using middlewares, aliasTopTours:
 router.route("/top-5-cheap").get(tourController.aliasTopTours, tourController.getAllTours);
 
+//Route to use the Aggregation Pipeline method created in the tourController:
+router.route("/tour-stats").get(tourController.getTourStats);
+
+//Using the url operator to get the specific year
+router.route("/monthly-plan/:year").get(tourController.getMonthlyPlan);
+
 //So we can define the routes like this now, since the resource path was already defined in the middleware:
 router.route("/").get(tourController.getAllTours).post(tourController.createTour);
 router.route("/:id").get(tourController.getTour).patch(tourController.updateTour).delete(tourController.deleteTour);

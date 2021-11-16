@@ -126,3 +126,115 @@ exports.deleteTour = async (req, res) => {
 		});
 	}
 };
+
+//Handler function to use aggregation pipeline for mongoDB, used by a route in tourRoutes.js:
+exports.getTourStats = async (req, res) => {
+	try {
+		//This method from mongoose, takes in an array of stages as argument, that will process documents. Each stage transforms the documents as they pass through the pipeline.
+
+		const stats = await Tour.aggregate([
+			{
+				//Preliminary stage, that filters out the documents with a ratingsAverage below 4.5:
+				$match: { ratingsAverage: { $gte: 4.5 } },
+			},
+			{
+				//Stage to group the results coming from the $match stage:
+				$group: {
+					//Setting the property _id to null, because here we want the results all in one group, so we can calculate the avg:
+					// _id: null,
+					//Now grouping by the difficulty level:
+					_id: "$difficulty",
+					//To calculate the total number of ratings:
+					numRatings: { $sum: "$ratingsQuantity" },
+					//To calculate the total number of tours, we just simply add 1 every time a document pass trhough the pipeline:
+					numTours: { $sum: 1 },
+					//Created property avgRating, using the mongodb operator $avg to get the average from the fields ratingsAverage:
+					avgRating: { $avg: "$ratingsAverage" },
+					avgPrice: { $avg: "$price" },
+					minPrice: { $min: "$price" },
+					maxPrice: { $max: "$price" },
+				},
+			},
+			{
+				//Stage to sort the results coming from the $group stage. So we need to use the names defined in the previous stage
+				//Sorting by the average Price, using 1 for ascending:
+				$sort: { avgPrice: 1 },
+			},
+		]);
+
+		//Now sending the response after passing all the documents through the pipeline:
+		res.status(200).json({
+			status: "success",
+			data: {
+				stats,
+			},
+		});
+	} catch (error) {
+		res.status(404).json({
+			status: "fail",
+			message: error.message,
+		});
+	}
+};
+
+//Now a handler function to calculate the busiest month of a year, using aggregation to return how many tours we have for each month, for a specific year:
+exports.getMonthlyPlan = async (req, res) => {
+	try {
+		const year = req.params.year * 1; //Multipying by one to convert to a number;
+
+		const plan = await Tour.aggregate([
+			{
+				//The methdod unwind deconstructs an array field from each document and then output one document for each element of the array. So we are gonna have a "The Forest Hiker" for each start date:
+				$unwind: "$startDates",
+			},
+			{
+				//Selecting the documents that have starting dates equal to the specified year:
+				$match: {
+					startDates: {
+						//We want it to be greater or equal then 01-01-YEAR
+						$gte: new Date(`${year}-01-01`),
+						//We want it to be less or equal then 31-12-YEAR
+						$lte: new Date(`${year}-12-31`),
+					},
+				},
+			},
+			{
+				//Grouping by the month:
+				$group: {
+					_id: { $month: "$startDates" }, //Using the $month operator, that returns the month of a date in number: JAN = 1
+					//Counting the number of tours:
+					numToursStarts: { $sum: 1 },
+					//Getting the name of each tour, in an array:
+					tours: { $push: "$name" },
+				},
+			},
+			{
+				//Adding a field with the same value of the _id field, so we can later hide the _id:
+				$addFields: { month: "$_id" },
+			},
+			{
+				//Using Project to hide the fields, using 0 to hide and 1 to show:
+				$project: {
+					_id: 0,
+				},
+			},
+			{
+				$sort: { numToursStarts: 1 },
+				//Sorting by the month:
+				// $sort: { month: 1 },
+			},
+		]);
+
+		res.status(200).json({
+			status: "success",
+			data: {
+				plan,
+			},
+		});
+	} catch (error) {
+		res.status(404).json({
+			status: "fail",
+			message: error.message,
+		});
+	}
+};
