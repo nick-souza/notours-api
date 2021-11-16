@@ -14,6 +14,10 @@ const router = express.Router();
 
 //---------------------------------------------------------------------------------------------------------------//
 
+//Adding a route to facilitate for the most used query strings, like an alias, so the user does not have to type the whole query:
+//We can achieve that using middlewares, aliasTopTours:
+router.route("/top-5-cheap").get(tourController.aliasTopTours, tourController.getAllTours);
+
 //So we can define the routes like this now, since the resource path was already defined in the middleware:
 router.route("/").get(tourController.getAllTours).post(tourController.createTour);
 router.route("/:id").get(tourController.getTour).patch(tourController.updateTour).delete(tourController.deleteTour);
