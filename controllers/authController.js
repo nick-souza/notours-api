@@ -67,3 +67,12 @@ exports.login = catchAsync(async (req, res, next) => {
 		token,
 	});
 });
+
+//Middleware function to only allow the user that is logged in, to access the getAllTours route:
+exports.protect = catchAsync(async (req, res, next) => {
+	//First, getting the token and check if its there:
+
+	//Then, validate the token, using JWT
+
+	next();
+});

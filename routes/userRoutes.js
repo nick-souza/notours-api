@@ -6,6 +6,7 @@ const userController = require("./../controllers/userController");
 const authController = require("./../controllers/authController");
 
 //---------------------------------------------------------------------------------------------------------------//
+
 //In order to keep everything organized and in separeta files, we need to create different Routers for each resource. Before they were all in the same router, the app router:
 // const userRouter = express.Router();
 const router = express.Router();
