@@ -24,7 +24,7 @@ router.route("/tour-stats").get(tourController.getTourStats);
 //Using the url operator to get the specific year
 router.route("/monthly-plan/:year").get(tourController.getMonthlyPlan);
 
-//So we can define the routes like this now, since the resource path was already defined in the middleware:
+//So we can define the routes like this now, since the resource path was already defined in the middleware in app.js:
 router.route("/").get(tourController.getAllTours).post(tourController.createTour);
 router.route("/:id").get(tourController.getTour).patch(tourController.updateTour).delete(tourController.deleteTour);
 

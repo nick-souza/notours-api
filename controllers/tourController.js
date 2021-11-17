@@ -1,5 +1,5 @@
-//Importing the TourModel, so we can have access to the Model created from the tourSchema:
 const AppError = require("../utils/appError");
+//Importing the TourModel, so we can have access to the Model created from the tourSchema:
 const Tour = require("./../models/tourModel");
 //Importing the APIFeatures to be able to use some methods for the getAllTours:
 const APIFeatures = require("./../utils/apiFeatures");
