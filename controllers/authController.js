@@ -19,12 +19,15 @@ const signToken = (id) => {
 	});
 };
 
+//---------------------------------------------------------------------------------------------------------------//
+
 exports.signup = catchAsync(async (req, res, next) => {
 	const newUser = await User.create({
 		name: req.body.name,
 		email: req.body.email,
 		password: req.body.password,
 		passwordConfirm: req.body.passwordConfirm,
+		role: req.body.role,
 	});
 
 	//Calling the token creating passing in the id from the created user:
@@ -39,6 +42,8 @@ exports.signup = catchAsync(async (req, res, next) => {
 		},
 	});
 });
+
+//---------------------------------------------------------------------------------------------------------------//
 
 //Function to login:
 exports.login = catchAsync(async (req, res, next) => {
@@ -69,6 +74,8 @@ exports.login = catchAsync(async (req, res, next) => {
 		token,
 	});
 });
+
+//---------------------------------------------------------------------------------------------------------------//
 
 //Middleware function to only allow the user that is logged in, to access the getAllTours route:
 exports.protect = catchAsync(async (req, res, next) => {
@@ -105,3 +112,24 @@ exports.protect = catchAsync(async (req, res, next) => {
 	req.user = currentUser;
 	next();
 });
+
+//---------------------------------------------------------------------------------------------------------------//
+
+//Middleware for authorization, to restrict some routes only to admin users, like deleting tours:
+//However, since we cant pass arguments to middleware functions, we need to create a wrapper function, and then return the middleware inside it:
+exports.restrictTo = (...roles) => {
+	//Receiving an arbitrary number of roles, and storing it in an array:
+
+	//Immediately returning the middleware function:
+	return (req, res, next) => {
+		//Now checking to see if the role of the user trying to access the route, is in the roles array that was specified when the function was called. Example: ["admin", "lead-guide"];
+		//And since this middleware will always run after the .protect(), we have access to the req.user:
+		if (!roles.includes(req.user.role)) {
+			return next(new AppError("You do not have permission to perform this action", 403));
+			//With the http code of 403 which is forbidden;
+		}
+
+		//So if the user is one of them:
+		next();
+	};
+};

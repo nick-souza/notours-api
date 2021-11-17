@@ -26,6 +26,14 @@ const userSchema = new mongoose.Schema({
 	photo: {
 		type: String,
 	},
+	//Property to define roles, like admin or normal user:
+	role: {
+		type: String,
+		//Only allowing certain types of roles:
+		enum: ["user", "guide", "lead-guide", "admin"],
+		//Setting the default to user, so all created accounts will be just users:
+		default: "user",
+	},
 	password: {
 		type: String,
 		required: [true, "Please provide a password"],
