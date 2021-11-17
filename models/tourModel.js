@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const slugify = require("slugify");
 
-//Creating the schema for the tours, using the moongose.Schema constructor passing in an object in the parameter:
+//Creating the schema for the tours, using the mongoose.Schema constructor passing in an object in the parameter:
 //Defining the de fields and doing some validation;
 const tourSchema = new mongoose.Schema(
 	{
@@ -30,7 +30,7 @@ const tourSchema = new mongoose.Schema(
 		difficulty: {
 			type: String,
 			//Validators:
-			required: [true, "A tour must have a dificulty"],
+			required: [true, "A tour must have a difficulty"],
 			//Since we only want three possibilities for the difficulty, we can use Enums:
 			enum: {
 				values: ["easy", "medium", "difficult"],
@@ -47,7 +47,7 @@ const tourSchema = new mongoose.Schema(
 		},
 		ratingsQuantity: {
 			type: Number,
-			defualt: 0,
+			default: 0,
 		},
 		price: {
 			type: Number,
@@ -67,7 +67,7 @@ const tourSchema = new mongoose.Schema(
 		},
 		summary: {
 			type: String,
-			//Using trim to remove the whitespaces
+			//Using trim to remove the whitespace
 			trim: true,
 			required: [true, "A tour must have a description"],
 		},
@@ -79,7 +79,7 @@ const tourSchema = new mongoose.Schema(
 			type: String,
 			required: [true, "A tour must have a cover image"],
 		},
-		//The tipy is an array of strings, containing the url for the images:
+		//The type is an array of strings, containing the url for the images:
 		images: [String],
 		createdAt: {
 			type: Date,
@@ -88,7 +88,7 @@ const tourSchema = new mongoose.Schema(
 			//Using the select property to automatically hide this property, so the user would not have access to it. Useful for sensitive data:
 			select: false,
 		},
-		//Property to define private tours, usind the mongoose middleware at the time of querying:
+		//Property to define private tours, using the mongoose middleware at the time of querying:
 		secretTour: {
 			type: Boolean,
 			default: false,
@@ -97,15 +97,15 @@ const tourSchema = new mongoose.Schema(
 		startDates: [Date],
 	},
 	{
-		//Passing another object as the object Options, so we can display the virutal propery
+		//Passing another object as the object Options, so we can display the virtual property
 
-		//So everytime the data is output as JSON/OBJECT, we want virtuals to be a part of it:
+		//So every time the data is output as JSON/OBJECT, we want virtuals to be a part of it:
 		toJSON: { virtuals: true },
 		toObject: { virtuals: true },
 	}
 );
 
-//Adding virtual properties, from mongoose. Just fields we can add to our model but it will not be persintent in our schema, so it wont be saved in the DB. Good for fields there are derived from one another, like converting from KM to MILES, where we dont need to save both if we can easily convert them:
+//Adding virtual properties, from mongoose. Just fields we can add to our model but it will not be persistent in our schema, so it wont be saved in the DB. Good for fields there are derived from one another, like converting from KM to MILES, where we dont need to save both if we can easily convert them:
 
 //Now using virtual properties to calculate the duration in weeks, since we have the duration in days.
 //Inside the getter we have to use a normal function, because arrow functions do not receive a this keyword:
@@ -116,7 +116,7 @@ tourSchema.virtual("durationWeeks").get(function () {
 //Defining a mongoose Document Middleware, to be activated between the save command is issued and the actual document saved:
 //So using the pre method will activate the function before the described event happens. Only after th .save() and .create() in this case:
 tourSchema.pre("save", function (next) {
-	//In a save middlware, the .this keyword points to the currently processed documents, thus called Document Middleware;
+	//In a save middleware, the .this keyword points to the currently processed documents, thus called Document Middleware;
 	//So before inserting the document to the DB, we can do operations with the data. In this case, create a slug for each:
 	this.slug = slugify(this.name, { lower: true });
 

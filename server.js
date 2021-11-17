@@ -2,7 +2,7 @@
 
 //Requiring the dotenv module to use the env variables in the config.env file
 const dotenv = require("dotenv");
-//Now specifying the path for the doten config file:
+//Now specifying the path for the dot env config file:
 dotenv.config({ path: "./config.env" });
 
 //Importing the app from the app.js
@@ -14,7 +14,7 @@ const mongoose = require("mongoose");
 //Getting the details from the config.env file, using the process.env variables, using the replace method to automatically input the db password:
 const DB = process.env.DATABASE.replace("<PASSWORD>", process.env.DATABASE_PASSWORD);
 
-//Now connection to the mongoDB, using the basic object with default propeties, and since it returns a promise, we can chain it:
+//Now connection to the mongoDB, using the basic object with default properties, and since it returns a promise, we can chain it:
 mongoose
 	.connect(DB, {
 		useNewUrlParser: true,

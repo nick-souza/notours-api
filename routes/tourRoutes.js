@@ -1,4 +1,4 @@
-//Module to hanle the Tours resources
+//Module to handle the Tours resources
 const express = require("express");
 
 //Importing the TourController with all the route handler functions:
@@ -6,7 +6,7 @@ const tourController = require("./../controllers/tourController");
 const authController = require("./../controllers/authController");
 
 //---------------------------------------------------------------------------------------------------------------//
-//In order to keep everything organized and in separeta files, we need to create different Routers for each resource. Before they were all in the same router, the app router:
+//In order to keep everything organized and in separate files, we need to create different Routers for each resource. Before they were all in the same router, the app router:
 // const tourRouter = express.Router();
 const router = express.Router();
 
@@ -16,7 +16,7 @@ const router = express.Router();
 //---------------------------------------------------------------------------------------------------------------//
 
 //Adding a route to facilitate for the most used query strings, like an alias, so the user does not have to type the whole query:
-//We can achieve that using middlewares, aliasTopTours:
+//We can achieve that using middleware, aliasTopTours:
 router.route("/top-5-cheap").get(tourController.aliasTopTours, tourController.getAllTours);
 
 //Route to use the Aggregation Pipeline method created in the tourController:

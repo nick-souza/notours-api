@@ -6,10 +6,12 @@ const AppError = require("./../utils/appError");
 
 //Importing the library to use the JSON Web Token, JWT, for authentication:
 const jwt = require("jsonwebtoken");
+//Importing the native node module that can promisify functions:
+const { promisify } = require("util");
 
 //---------------------------------------------------------------------------------------------------------------//
 
-//Function to genegate the Token;
+//Function to generate the Token;
 //Passing in the payload (_id), and the secret (stored in the config.env file) and the options object, using a expiration time (Also defined in the config.env)
 const signToken = (id) => {
 	return jwt.sign({ id: id }, process.env.JWT_SECRET, {
@@ -40,7 +42,7 @@ exports.signup = catchAsync(async (req, res, next) => {
 
 //Function to login:
 exports.login = catchAsync(async (req, res, next) => {
-	//Using destructuring to get the properies from the body:
+	//Using destructuring to get the properties from the body:
 	const { email, password } = req.body;
 
 	//Now checking if the user has input the email and pass :
@@ -50,7 +52,7 @@ exports.login = catchAsync(async (req, res, next) => {
 	}
 
 	//Now checking if the user exists:
-	//We have to use the .select() to slect the pass field that has the select: false in the model, and use the + sign since it is a hidden field:
+	//We have to use the .select() to select the pass field that has the select: false in the model, and use the + sign since it is a hidden field:
 	const user = await User.findOne({ email: email }).select("+password");
 
 	//Now, we need to compare the pass the user input to login, with the pass that is encrypted in our DB. Using a function created in the userModel.js. And since that function is a instance method, it is available in the new user we defined above, so we can just directly call it:
@@ -70,9 +72,36 @@ exports.login = catchAsync(async (req, res, next) => {
 
 //Middleware function to only allow the user that is logged in, to access the getAllTours route:
 exports.protect = catchAsync(async (req, res, next) => {
-	//First, getting the token and check if its there:
+	//First, getting the token and check if its there. Getting from the req.headers, always using the format: Authorization - Bearer "and the token":
 
-	//Then, validate the token, using JWT
+	let token; //Creating the variable out here, since the if block is blocked scope:
 
+	if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
+		//Then splitting the header string by the space character, and only getting the second part of the string:
+		token = req.headers.authorization.split(" ")[1];
+	}
+
+	//Returning an error if in the header there is no token:
+	if (!token) {
+		return next(new AppError("You are not logged in. Please log in to get access", 401));
+	}
+
+	//Then, validate the token, using JWT. In the .verify() we pass in the token, and also the secret, that is in the config.env, and it also requires a callback function, that will run when the verification if completed. But, we can use the promisify from native node, to make this function return a promise:
+	const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+
+	//If authentication successful, check if the user trying to access the route still exists. Using the payload from the token that is in the decoded variable, since we are using the id as the payload:
+	const currentUser = await User.findById(decoded.id);
+	if (!currentUser) {
+		return next(new AppError("This user no longer exists", 401));
+	}
+
+	//Check if user changed pass after the token was issued. Using the instate method declared in the userModel, passing in the property of the decoded object created by the jwt.verify, that contains the JWTTimestamp:
+	if (currentUser.changedPasswordAfter(decoded.iat)) {
+		//So the code will enter the if block if the changedPasswordAfter returns true, meaning the user has changed pass:
+		return next(new AppError("User recently changed password. Please log in again", 401));
+	}
+
+	//Only if after all the steps are ok, then call the next function, granting access to the protected route:
+	req.user = currentUser;
 	next();
 });

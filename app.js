@@ -37,9 +37,9 @@ app.use((req, res, next) => {
 });
 
 //---------------------------------------------------------------------------------------------------------------//
-//Getting the routers from the separete modules:
+//Getting the routers from the separate modules:
 
-//Now using middlewares to be able to connect these created routers with the main app router:
+//Now using middleware to be able to connect these created routers with the main app router:
 //Mounting the routers:
 app.use("/api/v1/tours", tourRouter);
 
@@ -47,14 +47,14 @@ app.use("/api/v1/users", userRouter);
 
 //---------------------------------------------------------------------------------------------------------------//
 
-//Adding a middleware to hanlde in case the user tries to go to a unhandled route. Using .all() to work for all HTTP methods:
+//Adding a middleware to handle in case the user tries to go to a unhandled route. Using .all() to work for all HTTP methods:
 app.all("*", (req, res, next) => {
 	//All the error can go to the error handler middleware, just have to specify the error object:
 	// const error = new Error(`Can't find ${req.originalUrl} in this server.`);
 	// error.status = "fail";
 	// error.statusCode = 404;
 
-	//Calling the next function passing in any argument, autoamtically calls the error handler middleware:
+	//Calling the next function passing in any argument, automatically calls the error handler middleware:
 	next(new AppError(`Can't find ${req.originalUrl} in this server.`, 404));
 });
 
@@ -63,5 +63,5 @@ app.use(globalErrorHandler);
 
 //---------------------------------------------------------------------------------------------------------------//
 
-//Exporing the app so the server.js module can listen and start the server:
+//Exporting the app so the server.js module can listen and start the server:
 module.exports = app;

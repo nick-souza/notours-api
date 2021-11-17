@@ -1,4 +1,4 @@
-//Module to hanle the User resources
+//Module to handle the User resources
 const express = require("express");
 
 //Importing the userController with all the route handler functions:
@@ -7,7 +7,7 @@ const authController = require("./../controllers/authController");
 
 //---------------------------------------------------------------------------------------------------------------//
 
-//In order to keep everything organized and in separeta files, we need to create different Routers for each resource. Before they were all in the same router, the app router:
+//In order to keep everything organized and in separate files, we need to create different Routers for each resource. Before they were all in the same router, the app router:
 // const userRouter = express.Router();
 const router = express.Router();
 

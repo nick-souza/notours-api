@@ -8,7 +8,7 @@ const catchAsync = require("./../utils/catchAsync");
 
 //---------------------------------------------------------------------------------------------------------------//
 
-//In order to make a cleaner code, we can remove the try/catch block from the async funcions, put it in another higher order function, and just wrap the async functions with the new one. So there will be no repetetion for the catch block, since it will be handled in just one place:
+//In order to make a cleaner code, we can remove the try/catch block from the async functions, put it in another higher order function, and just wrap the async functions with the new one. So there will be no repetition for the catch block, since it will be handled in just one place:
 
 //Since we want to export all of these functions, we put them in the exports object:
 exports.getAllUsers = catchAsync(async (req, res, next) => {

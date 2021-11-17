@@ -1,4 +1,4 @@
-//In order to make a cleaner code, we can remove the try/catch block from the async funcions, put it in another higher order function, and just wrap the async functions with the new one. So there will be no repetetion for the catch block, since it will be handled in just one place:
+//In order to make a cleaner code, we can remove the try/catch block from the async functions, put it in another higher order function, and just wrap the async functions with the new one. So there will be no repetition for the catch block, since it will be handled in just one place:
 
 //So the fn function being whatever we are calling, like the getAllTours, getTour, and so on:
 module.exports = catchAsync = (fn) => {

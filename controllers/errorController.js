@@ -2,6 +2,8 @@ const AppError = require("./../utils/appError");
 
 //Class that contains all the handlers for error:
 
+//---------------------------------------------------------------------------------------------------------------//
+
 //Functions to send error messages if in development or production:
 const sendErrorDev = (error, res) => {
 	res.status(error.statusCode).json({
@@ -27,10 +29,12 @@ const sendErrorProd = (error, res) => {
 		//Send the message to the user:
 		res.status(500).json({
 			status: "error",
-			message: "Semething went very wrong!",
+			message: "Something went very wrong!",
 		});
 	}
 };
+
+//---------------------------------------------------------------------------------------------------------------//
 
 const handleCastErrorDB = (err) => {
 	//Creating the message with the properties from the err object:
@@ -53,12 +57,18 @@ const handleValidationErrorDB = (err) => {
 	return new AppError(message, 400);
 };
 
+const handleJWTError = () => new AppError("Invalid Token. Please log in again", 401);
+
+const handleJWTExpiredError = () => new AppError("Session expired. Please log in again", 401);
+
+//---------------------------------------------------------------------------------------------------------------//
+
 //Middleware to take care of all the error handling. So every catch block and fail status can come directly here, so theres one unified location to take care of errors:
 module.exports = (error, req, res, next) => {
 	error.statusCode = error.statusCode || 500; //Setting the default, in case none is passed in:
 	error.status = error.status || "error";
 
-	//Sending different error messages if the error occours in development or production, since we have the enviroment variable NODE_ENV:
+	//Sending different error messages if the error occurs in development or production, since we have the environment variable NODE_ENV:
 	if (process.env.NODE_ENV === "development") {
 		sendErrorDev(error, res);
 	} else if (process.env.NODE_ENV === "production") {
@@ -73,6 +83,12 @@ module.exports = (error, req, res, next) => {
 
 		//Handler for the validationError
 		if (error.name === "ValidationError") err = handleValidationErrorDB(err);
+
+		//Handler for invalid token, when trying to access a protected route:
+		if (error.name === "JsonWebTokenError") err = handleJWTError();
+
+		//Handler for expired token, when trying to access a protected route:
+		if (error.name === "TokenExpiredError") err = handleJWTExpiredError();
 
 		sendErrorProd(err, res);
 	}

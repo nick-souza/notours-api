@@ -34,7 +34,7 @@ class APIFeatures {
 		//Now for using operators inside the query, like { duration: { $gt: 5 } }. In the URL we type: ?duration[gte]=5. So we need to convert it to the mongoDB operator by adding the $ sign.
 		//First, converting the queryObj to string, then using the replace method:
 		let queryStr = JSON.stringify(queryObj);
-		//Using regular expression to check if any of these words are in the query, and if they are, using the callback funciton to replace by adding the $ sign in front of it. And if they are not present, it will just be ignored:
+		//Using regular expression to check if any of these words are in the query, and if they are, using the callback function to replace by adding the $ sign in front of it. And if they are not present, it will just be ignored:
 		queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`);
 
 		//So the other fields will be ignored for the filtering

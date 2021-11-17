@@ -19,9 +19,9 @@ exports.aliasTopTours = (req, res, next) => {
 };
 
 //---------------------------------------------------------------------------------------------------------------//
-//In order to make a cleaner code, we can remove the try/catch block from the async funcions, put it in another higher order function, and just wrap the async functions with the new one. So there will be no repetetion for the catch block, since it will be handled in just one place:
+//In order to make a cleaner code, we can remove the try/catch block from the async functions, put it in another higher order function, and just wrap the async functions with the new one. So there will be no repetition for the catch block, since it will be handled in just one place:
 
-//Separete handler functions to take care of the routes:
+//Separate handler functions to take care of the routes:
 exports.getAllTours = catchAsync(async (req, res, next) => {
 	//Creating an instance of the class APIFeatures to be able to use its methods. Passing the query and the query string, and then chaining the methods:
 	const features = new APIFeatures(Tour.find(), req.query).filter().sort().limitFields().paginate();
@@ -30,11 +30,11 @@ exports.getAllTours = catchAsync(async (req, res, next) => {
 	const tours = await features.query;
 
 	res.status(200).json({
-		//Inside the object, also sending the status if its a sucess or fail:
+		//Inside the object, also sending the status if its a success or fail:
 		status: "success",
 		//Also including a property of results, with the total number of results generated, and since the find method returns an array, we can call the length:
 		results: tours.length,
-		//Sendind the data object and inside the actual data:
+		//Sending the data object and inside the actual data:
 		data: {
 			//Sending the tours property because it is the name of our endpoint /api/v1/tours:
 			tours: tours,
@@ -55,7 +55,7 @@ exports.getTour = catchAsync(async (req, res, next) => {
 	//Finding by the ID, form the req.params.id (the variable the user inputs in the URL, like /api/v2/5, the 5 will be the req.params.id)
 	const tour = await Tour.findById(req.params.id);
 
-	//If the user inputs a id with the same structure as the tour, but not a valide one, it returns null, not 404:
+	//If the user inputs a id with the same structure as the tour, but not a valid one, it returns null, not 404:
 	if (!tour) {
 		//Using next, to jump straight into the middleware error handler:
 		return next(new AppError("No tour found with that id", 404));
@@ -70,7 +70,7 @@ exports.getTour = catchAsync(async (req, res, next) => {
 });
 
 exports.createTour = catchAsync(async (req, res, next) => {
-	//To post a new document to the DB, we can use the create methdo directly in the instace of the model, and it returns a promise, so we can await it:
+	//To post a new document to the DB, we can use the create method directly in the instance of the model, and it returns a promise, so we can await it:
 	const newTour = await Tour.create(req.body);
 
 	res.status(201).json({
@@ -92,7 +92,7 @@ exports.updateTour = catchAsync(async (req, res, next) => {
 		runValidators: true,
 	});
 
-	//If the user inputs a id with the same structure as the tour, but not a valide one, it returns null, not 404:
+	//If the user inputs a id with the same structure as the tour, but not a valid one, it returns null, not 404:
 	if (!tour) {
 		//Using next, to jump straight into the middleware error handler:
 		return next(new AppError("No tour found with that id", 404));
@@ -107,7 +107,7 @@ exports.updateTour = catchAsync(async (req, res, next) => {
 exports.deleteTour = catchAsync(async (req, res, next) => {
 	const tour = await Tour.findByIdAndDelete(req.params.id);
 
-	//If the user inputs a id with the same structure as the tour, but not a valide one, it returns null, not 404:
+	//If the user inputs a id with the same structure as the tour, but not a valid one, it returns null, not 404:
 	if (!tour) {
 		//Using next, to jump straight into the middleware error handler:
 		return next(new AppError("No tour found with that id", 404));
@@ -137,7 +137,7 @@ exports.getTourStats = catchAsync(async (req, res, next) => {
 				_id: "$difficulty",
 				//To calculate the total number of ratings:
 				numRatings: { $sum: "$ratingsQuantity" },
-				//To calculate the total number of tours, we just simply add 1 every time a document pass trhough the pipeline:
+				//To calculate the total number of tours, we just simply add 1 every time a document pass through the pipeline:
 				numTours: { $sum: 1 },
 				//Created property avgRating, using the mongodb operator $avg to get the average from the fields ratingsAverage:
 				avgRating: { $avg: "$ratingsAverage" },
@@ -164,11 +164,11 @@ exports.getTourStats = catchAsync(async (req, res, next) => {
 
 //Now a handler function to calculate the busiest month of a year, using aggregation to return how many tours we have for each month, for a specific year:
 exports.getMonthlyPlan = catchAsync(async (req, res, next) => {
-	const year = req.params.year * 1; //Multipying by one to convert to a number;
+	const year = req.params.year * 1; //Multiplying by one to convert to a number;
 
 	const plan = await Tour.aggregate([
 		{
-			//The methdod unwind deconstructs an array field from each document and then output one document for each element of the array. So we are gonna have a "The Forest Hiker" for each start date:
+			//The method unwind deconstructs an array field from each document and then output one document for each element of the array. So we are gonna have a "The Forest Hiker" for each start date:
 			$unwind: "$startDates",
 		},
 		{

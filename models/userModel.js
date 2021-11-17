@@ -36,7 +36,7 @@ const userSchema = new mongoose.Schema({
 	passwordConfirm: {
 		type: String,
 		required: [true, "Please confirm your password"],
-		//Function to validade:
+		//Function to validate:
 		validate: {
 			//Only works on .CREATE() .SAVE(), so for update users we are gonna have to use the .save(), not .finOneAndUpdate();
 			validator: function (el) {
@@ -46,7 +46,11 @@ const userSchema = new mongoose.Schema({
 			message: "Passwords are not the same",
 		},
 	},
+	//TimeStamp to keep track if the user change the password:
+	passwordChangedAt: Date,
 });
+
+//---------------------------------------------------------------------------------------------------------------//
 
 //Middleware to handle password encryption, and it returns a promise, so the callback is a async:
 userSchema.pre("save", async function (next) {
@@ -57,20 +61,41 @@ userSchema.pre("save", async function (next) {
 	//So we are setting the password to be the encrypted one, using the bcrypt.hash(), passing in the password to be encrypted and the salt length to generate or salt to use:
 	this.password = await bcrypt.hash(this.password, 10);
 
-	//Now we need to delete the old pasword, that is still stored in the passwordConfirm field:
+	//Now we need to delete the old password, that is still stored in the passwordConfirm field:
 	this.passwordConfirm = undefined;
 
 	next();
 });
 
+//---------------------------------------------------------------------------------------------------------------//
+
 //Function to check if the pass the user input in the login page, matches with the encrypted pass we have in the DB. Used by authController.js:
-//An intance method. Is a method that will be available on all documents for this collection:
+//An instance method. Is a method that will be available on all documents for this collection:
 userSchema.methods.correctPassword = async function (candidatePass, userPass) {
 	//Where the candidatePass is the not hashed pass, and the userPass is the hashed pass in our DB;
 
-	//So using the bcypt.compare method to compare both, returning true or false:
+	//So using the bcrypt.compare method to compare both, returning true or false:
 	return await bcrypt.compare(candidatePass, userPass);
 };
+
+//Another instance method, to check if the user that is trying to access a protected route, has changed the password after the token was issued:
+userSchema.methods.changedPasswordAfter = function (JWTTimestamp) {
+	//The .this keyword in an instance method always points to the current document:
+
+	//Checking if this field exists, meaning that the user changed the pass before:
+	if (this.passwordChangedAt) {
+		//Converting the passwordChangedAt from date to milliseconds
+		const changedTimestamp = parseInt(this.passwordChangedAt.getTime() / 1000, 10);
+
+		//It will return true, which means that the user changed:
+		return JWTTimestamp < changedTimestamp;
+	}
+
+	//By default, assuming the user has not changed the password:
+	return false;
+};
+
+//---------------------------------------------------------------------------------------------------------------//
 
 const User = mongoose.model("User", userSchema);
 
