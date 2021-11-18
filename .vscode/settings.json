@@ -2,5 +2,5 @@
 	"files.exclude": {
 		"**/node_modules": true
 	},
-	"cSpell.words": ["maxlength", "virtuals"]
+	"cSpell.words": ["Mailtrap", "maxlength", "Natours", "virtuals"]
 }

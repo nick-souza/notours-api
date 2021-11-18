@@ -6,6 +6,9 @@ const bcrypt = require("bcryptjs");
 //Library that has custom validators:
 const validator = require("validator");
 
+//Importing the native node module to encrypt the reset password token, since it can be a bit less secure:
+const crypto = require("crypto");
+
 //---------------------------------------------------------------------------------------------------------------//
 
 //Schema for the users:
@@ -56,9 +59,29 @@ const userSchema = new mongoose.Schema({
 	},
 	//TimeStamp to keep track if the user change the password:
 	passwordChangedAt: Date,
+	//Fields to allow the user to receive a token to change the password:
+	passwordResetToken: String,
+	passwordResetExpires: Date,
+	//Property that will be changed when a user deletes the account, so it wont be deleted, it will be set to active: false;
+	active: {
+		type: Boolean,
+		default: true,
+		select: false,
+	},
 });
 
 //---------------------------------------------------------------------------------------------------------------//
+
+//Query middleware to check for active: false users and do not display them:
+//Using regular expression to get all the operations that starts with find, like findAndUpdate and so on:
+userSchema.pre(/^find/, function (next) {
+	//Since it is a query middleware, the .this points to the query;
+
+	//Using the $ne that is not equal to, like the !
+	this.find({ active: { $ne: false } });
+
+	next();
+});
 
 //Middleware to handle password encryption, and it returns a promise, so the callback is a async:
 userSchema.pre("save", async function (next) {
@@ -72,6 +95,16 @@ userSchema.pre("save", async function (next) {
 	//Now we need to delete the old password, that is still stored in the passwordConfirm field:
 	this.passwordConfirm = undefined;
 
+	next();
+});
+
+//Middleware function to run when the user updates the pass, to add the passwordChangedAt property:
+userSchema.pre("save", function (next) {
+	//So we only want to run this, if the password was changed, but not when it was created:
+	if (!this.isModified("password") || this.isNew) return next();
+
+	//If it passes, set a new Date:
+	this.passwordChangedAt = Date.now() - 1000;
 	next();
 });
 
@@ -101,6 +134,20 @@ userSchema.methods.changedPasswordAfter = function (JWTTimestamp) {
 
 	//By default, assuming the user has not changed the password:
 	return false;
+};
+
+//Another instance method, to create a token for the user reset the password, used by the authController:
+userSchema.methods.createPasswordResetToken = function () {
+	const resetToken = crypto.randomBytes(32).toString("hex");
+
+	//Now setting the field in the user model to be the same as the encrypted token:
+	this.passwordResetToken = crypto.createHash("sha256").update(resetToken).digest("hex");
+
+	//Setting the expiration, setting it to be 10 minutes from the creating of the token:
+	this.passwordResetExpires = Date.now() + 10 * 60 * 1000;
+
+	//Returning the token to send to the users email:
+	return resetToken;
 };
 
 //---------------------------------------------------------------------------------------------------------------//

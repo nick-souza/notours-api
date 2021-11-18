@@ -2,12 +2,20 @@
 const express = require("express");
 //Morgan is a library that makes using logger middleware easier:
 const morgan = require("morgan");
+//Importing the rate-limit package from express:
+const rateLimit = require("express-rate-limit");
+//Importing helmet to help with setting security in http headers
+const helmet = require("helmet");
+//Importing packages for data sanitization:
+const mongoSanitize = require("express-mongo-sanitize");
+const xss = require("xss-clean");
+//Package to prevent form parameter pollution, like ?sort=price&sort=duration where it should be sort=price,duration
+const hpp = require("hpp");
 
 //Requiring the AppError Class to handle all the Operational Errors:
 const AppError = require("./utils/appError");
 //Requiring the ErrorController module:
 const globalErrorHandler = require("./controllers/errorController");
-
 //Importing the modules with the routers:
 const tourRouter = require("./routes/tourRoutes");
 const userRouter = require("./routes/userRoutes");
@@ -22,8 +30,38 @@ const app = express();
 //The predefined string "dev", give us loads of information, like the type of method request (GET,POST), the path, status code and so on;
 app.use(morgan("dev"));
 
-//Just a function tha can modify the incoming data:
-app.use(express.json());
+//Middleware to watch and impose a rate limit for requests coming from the same IP, to prevent from attacks:
+const limiter = rateLimit({
+	//The max number of requests:
+	max: 50,
+	//The time in milliseconds:
+	windowMs: 60 * 60 * 1000,
+	//The message the user will receive if he exceeds the limit:
+	message: "Too many requests, try again later",
+});
+
+//Calling the function in the middleware:
+app.use("/api", limiter);
+
+//Middleware to set the security standards for the header using helmet:
+app.use(helmet());
+
+//Just a function tha can modify the incoming data. Also limiting the amount of data tha can come in from the req.body:
+app.use(express.json({ limit: "10kb" }));
+
+//After reading the data using the middleware above, we can perform data Sanitization, which means cleaning the data from malicious code:
+//Against NoSQL Injection:
+app.use(mongoSanitize());
+//Against XSS:
+app.use(xss());
+
+//Middleware to prevent form parameter pollution, like ?sort=price&sort=duration where it should be sort=price,duration:
+//We can whitelist some terms, like ?duration=5&duration=9, which should work:
+app.use(
+	hpp({
+		whitelist: ["duration", "ratingsQuantity", "ratingsAverage", "maxGroupSize", "difficulty", "price"],
+	})
+);
 
 //Middleware to serve static files, like the overview.html in the public folder:
 app.use(express.static(`${__dirname}/public`));
@@ -37,6 +75,7 @@ app.use((req, res, next) => {
 });
 
 //---------------------------------------------------------------------------------------------------------------//
+
 //Getting the routers from the separate modules:
 
 //Now using middleware to be able to connect these created routers with the main app router:

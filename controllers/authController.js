@@ -3,7 +3,11 @@
 const User = require("./../models/userModel");
 const catchAsync = require("./../utils/catchAsync");
 const AppError = require("./../utils/appError");
+//Importing the email module:
+const sendEmail = require("./../utils/email");
 
+//Importing the native node module to encrypt the reset password token, since it can be a bit less secure:
+const crypto = require("crypto");
 //Importing the library to use the JSON Web Token, JWT, for authentication:
 const jwt = require("jsonwebtoken");
 //Importing the native node module that can promisify functions:
@@ -19,6 +23,40 @@ const signToken = (id) => {
 	});
 };
 
+//Function to log the user in, after some operation, like changing the password:
+const createAndSendToken = (user, statusCode, res) => {
+	//Calling the token creating passing in the id from the created user:
+	const token = signToken(user._id);
+
+	//Options object for the cookie:
+	const cookieOptions = {
+		//Setting the expiration time, similar to the JWT expiration time:
+		expires: new Date(Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000),
+		//Option to only send over secure https:
+		// secure: true,
+		//Option so the cookie cannot be modified by the browser, only read and sent:
+		httpOnly: true,
+	};
+
+	//Only using the secure option when in production:
+	if (process.env.NODE_ENV === "production") cookieOptions.secure = true;
+
+	//Sending the token as a cookie, so the use can stay logged in:
+	res.cookie("jwt", token, cookieOptions);
+
+	//Not sending the pass back when the user is created:
+	user.password = undefined;
+
+	res.status(statusCode).json({
+		status: "success",
+		//Passing in the created token
+		token,
+		data: {
+			user: user,
+		},
+	});
+};
+
 //---------------------------------------------------------------------------------------------------------------//
 
 exports.signup = catchAsync(async (req, res, next) => {
@@ -30,17 +68,8 @@ exports.signup = catchAsync(async (req, res, next) => {
 		role: req.body.role,
 	});
 
-	//Calling the token creating passing in the id from the created user:
-	const token = signToken(newUser._id);
-
-	res.status(201).json({
-		status: "success",
-		//Passing in the created token
-		token,
-		data: {
-			user: newUser,
-		},
-	});
+	//Calling the function to create the token and log the user in:
+	createAndSendToken(newUser, 201, res);
 });
 
 //---------------------------------------------------------------------------------------------------------------//
@@ -67,12 +96,8 @@ exports.login = catchAsync(async (req, res, next) => {
 	}
 
 	//If all information checks out, create a new token with the id:
-	const token = signToken(user._id);
-
-	res.status(200).json({
-		status: "success",
-		token,
-	});
+	//Calling the function to create the token and log the user in:
+	createAndSendToken(user, 200, res);
 });
 
 //---------------------------------------------------------------------------------------------------------------//
@@ -133,3 +158,100 @@ exports.restrictTo = (...roles) => {
 		next();
 	};
 };
+
+//---------------------------------------------------------------------------------------------------------------//
+
+//Middleware to the user receives a link to reset the password
+exports.forgotPassword = catchAsync(async (req, res, next) => {
+	//First, get the user based on the posted email:
+	const user = await User.findOne({ email: req.body.email });
+	if (!user) {
+		return next(new AppError("There is no user with that email address", 404));
+	}
+
+	//Generate the random reset token. Storing the generated token (by createPasswordResetToken in the model) in a variable:
+	const resetToken = user.createPasswordResetToken();
+
+	//Deactivating validators to just require the users email:
+	await user.save({ validateBeforeSave: false });
+
+	//Then send it to the user's email:
+	//Creating the URL:
+	const resetURL = `${req.protocol}://${req.get("host")}/api/v1/users/resetPassword/${resetToken}`;
+
+	//Message for the email
+	const message = `Forgot password? Submit a PATCH request with a new password and passwordConfirm to: ${resetURL}. \nIf you didn't, ignore this email. `;
+
+	try {
+		await sendEmail({
+			email: req.body.email,
+			subject: "Your password reset token (valid for 10 mi)",
+			message: message,
+		});
+
+		res.status(200).json({
+			status: "success",
+			message: "Token sent to email",
+		});
+	} catch (error) {
+		//In case of any errors, just remove those properties:
+		user.passwordResetToken = undefined;
+		user.passwordResetExpires = undefined;
+
+		await user.save({ validateBeforeSave: false });
+
+		return next(new AppError("There was an error sending email, try again later", 500));
+	}
+});
+
+//---------------------------------------------------------------------------------------------------------------//
+
+exports.resetPassword = catchAsync(async (req, res, next) => {
+	//First, get the user based on the token
+	const hashedToken = crypto.createHash("sha256").update(req.params.token).digest("hex");
+
+	//Finding the user, and checking if the has not expired, using mongoDb operands gt (greater than):
+	const user = await User.findOne({ passwordResetToken: hashedToken, passwordResetExpires: { $gt: Date.now() } });
+
+	//If the token has not expired and there us a user, set the new password
+	if (!user) {
+		return next(new AppError("Token is invalid or has expired", 400));
+	}
+
+	user.password = req.body.password;
+	user.passwordConfirm = req.body.passwordConfirm;
+	user.passwordResetToken = undefined;
+	user.passwordResetExpires = undefined;
+
+	await user.save();
+
+	//Update changedPasswordAt property for the user
+	//Log the user in , send JWT
+
+	//If all information checks out, create a new token with the id:
+	//Calling the function to create the token and log the user in:
+	createAndSendToken(user, 200, res);
+});
+
+//---------------------------------------------------------------------------------------------------------------//
+
+//In case the logged user wants to change the pass, without having to go to forgot password:
+exports.updatePassword = catchAsync(async (req, res, next) => {
+	//First we need to get the user from the collection:
+	const user = await User.findById(req.user.id).select("+password");
+
+	//Then check if the POSTed current pass is correct:
+
+	if (!(await user.correctPassword(req.body.passwordCurrent, user.password))) {
+		return next(new AppError("Your current password is incorrect", 401));
+	}
+
+	//Then update the pass:
+	user.password = req.body.password;
+	user.passwordConfirm = req.body.passwordConfirm;
+	await user.save();
+
+	//Finally log the user in, send JWT
+	//Calling the function to create the token and log the user in:
+	createAndSendToken(user, 200, res);
+});
