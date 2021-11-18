@@ -4,6 +4,7 @@ const express = require("express");
 //Importing the TourController with all the route handler functions:
 const tourController = require("./../controllers/tourController");
 const authController = require("./../controllers/authController");
+const reviewController = require("../controllers/reviewController");
 
 //---------------------------------------------------------------------------------------------------------------//
 //In order to keep everything organized and in separate files, we need to create different Routers for each resource. Before they were all in the same router, the app router:
@@ -35,5 +36,10 @@ router
 	.patch(tourController.updateTour)
 	.delete(authController.protect, authController.restrictTo("admin", "lead-guide"), tourController.deleteTour);
 // .delete(authController.protect, tourController.deleteTour);
+
+//Adding nested routes, so we can access the reviews through the tours URL. Like: /tours/someTourID/reviews:
+router.route("/:tourId/reviews").post(authController.protect, authController.restrictTo("user"), reviewController.createReview);
+
+//---------------------------------------------------------------------------------------------------------------//
 
 module.exports = router;

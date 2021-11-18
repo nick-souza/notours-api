@@ -19,6 +19,7 @@ exports.aliasTopTours = (req, res, next) => {
 };
 
 //---------------------------------------------------------------------------------------------------------------//
+
 //In order to make a cleaner code, we can remove the try/catch block from the async functions, put it in another higher order function, and just wrap the async functions with the new one. So there will be no repetition for the catch block, since it will be handled in just one place:
 
 //Separate handler functions to take care of the routes:
@@ -53,7 +54,8 @@ exports.getAllTours = catchAsync(async (req, res, next) => {
 
 exports.getTour = catchAsync(async (req, res, next) => {
 	//Finding by the ID, form the req.params.id (the variable the user inputs in the URL, like /api/v2/5, the 5 will be the req.params.id)
-	const tour = await Tour.findById(req.params.id);
+	//Using populate virtually populate the reviews array with the actual reviews:
+	const tour = await Tour.findById(req.params.id).populate("reviews");
 
 	//If the user inputs a id with the same structure as the tour, but not a valid one, it returns null, not 404:
 	if (!tour) {

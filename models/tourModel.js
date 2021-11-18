@@ -1,6 +1,8 @@
 const mongoose = require("mongoose");
 const slugify = require("slugify");
 
+//---------------------------------------------------------------------------------------------------------------//
+
 //Creating the schema for the tours, using the mongoose.Schema constructor passing in an object in the parameter:
 //Defining the de fields and doing some validation;
 const tourSchema = new mongoose.Schema(
@@ -95,6 +97,45 @@ const tourSchema = new mongoose.Schema(
 		},
 		//Array containing all the possible start dates for a tour:
 		startDates: [Date],
+
+		//Now we start to add the locations, using geospatial data, using GeoJSON:
+		startLocation: {
+			//This is not the schema options like the fields before, it is indeed a embedded object, so each field will get its schema option:
+			type: {
+				type: String,
+				default: "Point",
+				//It can only be "Point", so using enum once again:
+				enum: ["Point"],
+			},
+			coordinates: [Number],
+			address: String,
+			description: String,
+		},
+		//Embedding documents needs to go inside an array, and then with the object inside it:
+		locations: [
+			{
+				type: {
+					type: String,
+					default: "Point",
+					//It can only be "Point", so using enum once again:
+					enum: ["Point"],
+				},
+				coordinates: [Number],
+				address: String,
+				description: String,
+				//The day of the tour:
+				day: Number,
+			},
+		],
+		//Using child referencing to keep the ids of the user guides in the document tours:
+		guides: [
+			{
+				//So the type expected is to be a mongo ID:
+				type: mongoose.Schema.ObjectId,
+				//Now establishing the reference to the User document:
+				ref: "User",
+			},
+		],
 	},
 	{
 		//Passing another object as the object Options, so we can display the virtual property
@@ -105,6 +146,8 @@ const tourSchema = new mongoose.Schema(
 	}
 );
 
+//---------------------------------------------------------------------------------------------------------------//
+
 //Adding virtual properties, from mongoose. Just fields we can add to our model but it will not be persistent in our schema, so it wont be saved in the DB. Good for fields there are derived from one another, like converting from KM to MILES, where we dont need to save both if we can easily convert them:
 
 //Now using virtual properties to calculate the duration in weeks, since we have the duration in days.
@@ -112,6 +155,18 @@ const tourSchema = new mongoose.Schema(
 tourSchema.virtual("durationWeeks").get(function () {
 	return this.duration / 7;
 });
+
+//Virtually populating reviews. Since we only have child reference in the reviews, where the review model saves the tour id and the tour does not have access, we can use virtual populate to only get that information upon querying:
+tourSchema.virtual("reviews", {
+	//The first option is the name of the model we want to reference:
+	ref: "Review",
+	//Also specify the name of the field in the other model (review model in this case) where the reference to the current model is stored. So in the review.model the tour property holds the id for a certain tour:
+	foreignField: "tour",
+	//And the name for current model where the id is stored:
+	localField: "_id",
+});
+
+//---------------------------------------------------------------------------------------------------------------//
 
 //Defining a mongoose Document Middleware, to be activated between the save command is issued and the actual document saved:
 //So using the pre method will activate the function before the described event happens. Only after th .save() and .create() in this case:
@@ -136,6 +191,19 @@ tourSchema.pre(/^find/, function (next) {
 	next();
 });
 
+//Defining a middleware using the .populate() so the child reference to the user ID that it is in the Tour.guides, can pull up the user information to display, as if it was embedded, but the full information will only show in the query, it wont be in the DB:
+tourSchema.pre(/^find/, function (next) {
+	//And since the query middleware .this always points to the query, we can just do the .populate to the .this:
+	this.populate({
+		//So which field to populate:
+		path: "guides",
+		//Using - to not show certain property:
+		select: "-__v -passwordChangedAt",
+	});
+
+	next();
+});
+
 //Defining a mongoose Aggregation Middleware. Using our private tour, it is still being use to calculate the stats for the tourController.getMonthlyPlan, so we can use a middleware to exclude the documents with the property  secretTour;
 tourSchema.pre("aggregate", function (next) {
 	//So the .this will point to the aggregation object; So we can add another stage in the this.pipeline, which is the property that contains all the stages. Using the unshift to add at the beginning of the aggregation array:
@@ -143,6 +211,8 @@ tourSchema.pre("aggregate", function (next) {
 
 	next();
 });
+
+//---------------------------------------------------------------------------------------------------------------//
 
 //Now that we have the schema, we can create the model out of it, using the name always uppercase, and passing in the schema name:
 const Tour = mongoose.model("Tour", tourSchema);

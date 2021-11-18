@@ -19,6 +19,7 @@ const globalErrorHandler = require("./controllers/errorController");
 //Importing the modules with the routers:
 const tourRouter = require("./routes/tourRoutes");
 const userRouter = require("./routes/userRoutes");
+const reviewRouter = require("./routes/reviewRoutes");
 
 //The express is a function that will assign loads of useful methods to our app variable:
 const app = express();
@@ -83,6 +84,8 @@ app.use((req, res, next) => {
 app.use("/api/v1/tours", tourRouter);
 
 app.use("/api/v1/users", userRouter);
+
+app.use("/api/v1/reviews", reviewRouter);
 
 //---------------------------------------------------------------------------------------------------------------//
 

@@ -33,4 +33,9 @@ router.delete("/deleteMe", authController.protect, userController.deleteMe);
 router.route("/").get(userController.getAllUsers).post(userController.createUser);
 router.route("/:id").get(userController.getUser).patch(userController.updateUser).delete(userController.deleteUser);
 
+//Adding nested routes, so we can access the reviews through the tours URL. Like: /tours/1251352/reviews:
+router.route(":tourDd/reviews");
+
+//---------------------------------------------------------------------------------------------------------------//
+
 module.exports = router;
