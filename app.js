@@ -21,6 +21,7 @@ const globalErrorHandler = require("./controllers/errorController");
 const tourRouter = require("./routes/tourRoutes");
 const userRouter = require("./routes/userRoutes");
 const reviewRouter = require("./routes/reviewRoutes");
+const viewRouter = require("./routes/viewRoutes");
 
 //The express is a function that will assign loads of useful methods to our app variable:
 const app = express();
@@ -82,11 +83,8 @@ app.use((req, res, next) => {
 
 //---------------------------------------------------------------------------------------------------------------//
 
-//Rendering the templates:
-app.get("/", (req, res) => {
-	//We only need to put the name of the file since the path is already defined at the top:
-	res.status(200).render("base");
-});
+//Rendering
+app.use("/", viewRouter);
 
 //Getting the routers from the separate modules:
 
