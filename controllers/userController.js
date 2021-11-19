@@ -38,6 +38,12 @@ exports.updateUser = factory.updateOne(User);
 // Calling the generic delete function that is defined in the handlerFactory passing in the model:
 exports.deleteUser = factory.deleteOne(User);
 
+//Creating an endpoint /me, so the user can have access to his own information. But we need this middleware first, since the id will be coming in from the already logged in user, not in the url:
+exports.getMe = (req, res, next) => {
+	//So setting the params.id to be the same as the user.id:
+	req.params.id = req.user.id;
+	next();
+};
 //---------------------------------------------------------------------------------------------------------------//
 
 //HANDLER FUNCTIONS UNIQUE TO THE USER MODEL:

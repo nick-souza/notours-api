@@ -25,16 +25,21 @@ router.route("/top-5-cheap").get(tourController.aliasTopTours, tourController.ge
 router.route("/tour-stats").get(tourController.getTourStats);
 
 //Using the url operator to get the specific year
-router.route("/monthly-plan/:year").get(tourController.getMonthlyPlan);
+router
+	.route("/monthly-plan/:year")
+	.get(authController.protect, authController.restrictTo("admin", "lead-guide", "guide"), tourController.getMonthlyPlan);
 
 //So we can define the routes like this now, since the resource path was already defined in the middleware in app.js:
 //Using the authController.protect middleware, to only allow signed in users to get the tours:
-router.route("/").get(authController.protect, tourController.getAllTours).post(tourController.createTour);
+router
+	.route("/")
+	.get(tourController.getAllTours)
+	.post(authController.protect, authController.restrictTo("admin", "lead-guide"), tourController.createTour);
 
 router
 	.route("/:id")
 	.get(tourController.getTour)
-	.patch(tourController.updateTour)
+	.patch(authController.protect, authController.restrictTo("admin", "lead-guide"), tourController.updateTour)
 	.delete(authController.protect, authController.restrictTo("admin", "lead-guide"), tourController.deleteTour);
 // .delete(authController.protect, tourController.deleteTour);
 
