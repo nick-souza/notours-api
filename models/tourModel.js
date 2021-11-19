@@ -46,6 +46,8 @@ const tourSchema = new mongoose.Schema(
 			//Validators:
 			min: [1, "Rating must be above 1.0"],
 			max: [5, "Rating must be below 5.0"],
+			//Property to round the numbers. Multiplying by 10 bc .round rounds up to the next int, and then dividing by 10 to get the double value:
+			set: (val) => Math.round(val * 10) / 10,
 		},
 		ratingsQuantity: {
 			type: Number,
@@ -145,6 +147,13 @@ const tourSchema = new mongoose.Schema(
 		toObject: { virtuals: true },
 	}
 );
+
+//---------------------------------------------------------------------------------------------------------------//
+
+//Declaring the indexes. So when a user makes a query that contains that index, mongo wont have to search all the documents, it will only look up for those indexed:
+tourSchema.index({ price: 1, ratingsAverage: -1 });
+tourSchema.index({ slug: 1 });
+//1 meas ascending order, and -1 meas descending order
 
 //---------------------------------------------------------------------------------------------------------------//
 
