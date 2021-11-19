@@ -29,6 +29,11 @@ router
 	.route("/monthly-plan/:year")
 	.get(authController.protect, authController.restrictTo("admin", "lead-guide", "guide"), tourController.getMonthlyPlan);
 
+//Route for the geospatial query. To find tours close to a certain location:
+router.route("/tours-within/:distance/center/:latlng/unit/:unit").get(tourController.getToursWithin);
+//Route to calculate the distance the user is to a startLocation of a tour:
+router.route("/distances/:latlng/unit/:unit").get(tourController.getDistances);
+
 //So we can define the routes like this now, since the resource path was already defined in the middleware in app.js:
 //Using the authController.protect middleware, to only allow signed in users to get the tours:
 router

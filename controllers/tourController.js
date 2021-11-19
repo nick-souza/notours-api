@@ -1,4 +1,5 @@
 //Importing the TourModel, so we can have access to the Model created from the tourSchema:
+const AppError = require("../utils/appError");
 const Tour = require("./../models/tourModel");
 //Importing the function to allows us to remove the try/catch block from the async func.:
 const catchAsync = require("./../utils/catchAsync");
@@ -134,6 +135,82 @@ exports.getMonthlyPlan = catchAsync(async (req, res, next) => {
 		status: "success",
 		data: {
 			plan,
+		},
+	});
+});
+
+//---------------------------------------------------------------------------------------------------------------//
+
+//Method for the geospatial query:
+exports.getToursWithin = catchAsync(async (req, res, next) => {
+	//Destructuring to get all the data from the parameters in the URL:
+	const { distance, latlng, unit } = req.params;
+	//Now splitting the latlng since it comes like -213,324:
+	const [lat, lng] = latlng.split(",");
+
+	//Defining the special unit radiance based on the unit, to be used in the query. We divide our radius by the radius of the earth:
+	const radius = unit === "mi" ? distance / 3963.2 : distance / 6378.1; //Is either miles or kilometers
+
+	//Checking if the coords where specified:
+	if (!lat || !lng) {
+		return next(new AppError("Please provide latitude and longitude in the format lat,lng", 400));
+	}
+
+	//Now the geospatial query. So the first parameter is what we want to query, in this case the startLocation that has the coordinates. Then we specify the value we are searching for, so we use a operator $geoWithin that finds documents that are within a certain geometry. So we need to define the geometry next, which is a circle starting in the latlng defined before, and with a radius of the distance defined before. The centerSphere takes in array of the coords and of the radius:
+	const tours = await Tour.find({ startLocation: { $geoWithin: { $centerSphere: [[lng, lat], radius] } } });
+
+	res.status(200).json({
+		status: "success",
+		results: tours.length,
+		data: {
+			data: tours,
+		},
+	});
+});
+
+//Function to get the distance between the user and the startLocations:
+exports.getDistances = catchAsync(async (req, res, next) => {
+	//Destructuring to get all the data from the parameters in the URL:
+	const { latlng, unit } = req.params;
+	//Now splitting the latlng since it comes like -213,324:
+	const [lat, lng] = latlng.split(",");
+
+	//Checking what unit the user is using, to then convert it:
+	const multiplier = unit === "mi" ? 0.000621371 : 0.001;
+
+	//Checking if the coords where specified:
+	if (!lat || !lng) {
+		return next(new AppError("Please provide latitude and longitude in the format lat,lng", 400));
+	}
+
+	//Using the aggregation pipeline:
+	const distances = await Tour.aggregate([
+		{
+			//This stage has to always be the first:
+			$geoNear: {
+				//The variable from the user
+				near: {
+					type: "Point",
+					coordinates: [lng * 1, lat * 1], //Multiplying by one to convert to numbers;
+				},
+				distanceField: "distance",
+				//Since the result is in meters, converting to KM:
+				distanceMultiplier: multiplier,
+			},
+		},
+		{
+			//Using the project stage to only show certain fields:
+			$project: {
+				distance: 1,
+				name: 1,
+			},
+		},
+	]);
+
+	res.status(200).json({
+		status: "success",
+		data: {
+			data: distances,
 		},
 	});
 });

@@ -155,6 +155,9 @@ tourSchema.index({ price: 1, ratingsAverage: -1 });
 tourSchema.index({ slug: 1 });
 //1 meas ascending order, and -1 meas descending order
 
+//Adding an index for the stating location so we can use in the geospatial query:
+tourSchema.index({ startLocation: "2dsphere" });
+
 //---------------------------------------------------------------------------------------------------------------//
 
 //Adding virtual properties, from mongoose. Just fields we can add to our model but it will not be persistent in our schema, so it wont be saved in the DB. Good for fields there are derived from one another, like converting from KM to MILES, where we dont need to save both if we can easily convert them:
@@ -214,12 +217,12 @@ tourSchema.pre(/^find/, function (next) {
 });
 
 //Defining a mongoose Aggregation Middleware. Using our private tour, it is still being use to calculate the stats for the tourController.getMonthlyPlan, so we can use a middleware to exclude the documents with the property  secretTour;
-tourSchema.pre("aggregate", function (next) {
-	//So the .this will point to the aggregation object; So we can add another stage in the this.pipeline, which is the property that contains all the stages. Using the unshift to add at the beginning of the aggregation array:
-	this.pipeline().unshift({ $match: { secretTour: { $ne: true } } });
+// tourSchema.pre("aggregate", function (next) {
+// 	//So the .this will point to the aggregation object; So we can add another stage in the this.pipeline, which is the property that contains all the stages. Using the unshift to add at the beginning of the aggregation array:
+// 	this.pipeline().unshift({ $match: { secretTour: { $ne: true } } });
 
-	next();
-});
+// 	next();
+// });
 
 //---------------------------------------------------------------------------------------------------------------//
 
