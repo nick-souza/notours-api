@@ -30,11 +30,8 @@ router.patch("/updateMe", authController.protect, userController.updateMe);
 router.delete("/deleteMe", authController.protect, userController.deleteMe);
 
 //So we can define the routes like this now, since the resource path was already defined in the middleware:
-router.route("/").get(userController.getAllUsers).post(userController.createUser);
+router.route("/").get(userController.getAllUsers);
 router.route("/:id").get(userController.getUser).patch(userController.updateUser).delete(userController.deleteUser);
-
-//Adding nested routes, so we can access the reviews through the tours URL. Like: /tours/1251352/reviews:
-router.route(":tourDd/reviews");
 
 //---------------------------------------------------------------------------------------------------------------//
 

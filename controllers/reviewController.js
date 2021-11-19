@@ -1,30 +1,33 @@
 const Review = require("./../models/reviewModel");
-const catchAsync = require("./../utils/catchAsync");
+//Importing the handler factory, that contains all the handler functions for all modelController:
+const factory = require("./handlerFactory");
 
-exports.getAllReviews = catchAsync(async (req, res, next) => {
-	const reviews = await Review.find();
+//---------------------------------------------------------------------------------------------------------------//
 
-	res.status(200).json({
-		status: "success",
-		results: reviews.length,
-		data: {
-			reviews: reviews,
-		},
-	});
-});
+//METHODS COMING FROM THE HANDLER FACTORY, TO AVOID DUPLICATE CODE:
 
-exports.createReview = catchAsync(async (req, res, next) => {
+exports.getAllReviews = factory.getAll(Review);
+
+// Calling the generic create function that is defined in the handlerFactory passing in the model:
+exports.createReview = factory.createOne(Review);
+
+// Calling the generic delete function that is defined in the handlerFactory passing in the model:
+exports.deleteReview = factory.deleteOne(Review);
+
+// Calling the generic update function that is defined in the handlerFactory passing in the model:
+exports.updateReview = factory.updateOne(Review);
+
+//Middleware function that will run before creating a tour, so we can check if the touID was specified or not:
+exports.setTourUserIds = (req, res, next) => {
 	//So if the tour id was no specified, we should use the one that it is in the URL, since we are now using nested routes. Like /tours/someTourID/reviews:
 	if (!req.body.tour) req.body.tour = req.params.tourId;
 	//Same for the user, since we get access with the authController.protect:
 	if (!req.body.user) req.body.user = req.user.id;
 
-	const newReview = await Review.create(req.body);
+	next();
+};
 
-	res.status(201).json({
-		status: "success",
-		data: {
-			review: newReview,
-		},
-	});
-});
+// Calling the generic getOneById function that is defined in the handlerFactory passing in the model:
+exports.getReview = factory.getOne(Review);
+
+//---------------------------------------------------------------------------------------------------------------//

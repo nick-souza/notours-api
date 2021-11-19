@@ -5,16 +5,17 @@ const express = require("express");
 const tourController = require("./../controllers/tourController");
 const authController = require("./../controllers/authController");
 const reviewController = require("../controllers/reviewController");
+const reviewRouter = require("./reviewRoutes");
 
 //---------------------------------------------------------------------------------------------------------------//
 //In order to keep everything organized and in separate files, we need to create different Routers for each resource. Before they were all in the same router, the app router:
 // const tourRouter = express.Router();
 const router = express.Router();
 
-//Middleware to check for the input id in the URL:
-// router.param("id", tourController.checkID);
-
 //---------------------------------------------------------------------------------------------------------------//
+
+//Middleware so we can use nested routes, so we can access the reviews through the tours URL. Like: /tours/someTourID/reviews. Used for the merge router in the reviewsRoutes. Basically we say that whenever it encounters a url like this, it should be handled by the reviewRouter:
+router.use("/:tourId/reviews", reviewRouter);
 
 //Adding a route to facilitate for the most used query strings, like an alias, so the user does not have to type the whole query:
 //We can achieve that using middleware, aliasTopTours:

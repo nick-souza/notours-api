@@ -1,10 +1,9 @@
-const AppError = require("../utils/appError");
 //Importing the TourModel, so we can have access to the Model created from the tourSchema:
 const Tour = require("./../models/tourModel");
-//Importing the APIFeatures to be able to use some methods for the getAllTours:
-const APIFeatures = require("./../utils/apiFeatures");
 //Importing the function to allows us to remove the try/catch block from the async func.:
 const catchAsync = require("./../utils/catchAsync");
+//Importing the handler factory, that contains all the handler functions for all modelController:
+const factory = require("./handlerFactory");
 
 //---------------------------------------------------------------------------------------------------------------//
 
@@ -20,106 +19,26 @@ exports.aliasTopTours = (req, res, next) => {
 
 //---------------------------------------------------------------------------------------------------------------//
 
-//In order to make a cleaner code, we can remove the try/catch block from the async functions, put it in another higher order function, and just wrap the async functions with the new one. So there will be no repetition for the catch block, since it will be handled in just one place:
+//METHODS COMING FROM THE HANDLER FACTORY, TO AVOID DUPLICATE CODE:
 
-//Separate handler functions to take care of the routes:
-exports.getAllTours = catchAsync(async (req, res, next) => {
-	//Creating an instance of the class APIFeatures to be able to use its methods. Passing the query and the query string, and then chaining the methods:
-	const features = new APIFeatures(Tour.find(), req.query).filter().sort().limitFields().paginate();
+// Calling the generic getAll function that is defined in the handlerFactory passing in the model:
+exports.getAllTours = factory.getAll(Tour);
 
-	//And now execute the query:
-	const tours = await features.query;
+// Calling the generic getOneById function that is defined in the handlerFactory, passing in the model and the field to populate:
+exports.getTour = factory.getOne(Tour, { path: "reviews" });
 
-	res.status(200).json({
-		//Inside the object, also sending the status if its a success or fail:
-		status: "success",
-		//Also including a property of results, with the total number of results generated, and since the find method returns an array, we can call the length:
-		results: tours.length,
-		//Sending the data object and inside the actual data:
-		data: {
-			//Sending the tours property because it is the name of our endpoint /api/v1/tours:
-			tours: tours,
-		},
-	});
+// Calling the generic create function that is defined in the handlerFactory passing in the model:
+exports.createTour = factory.createOne(Tour);
 
-	//OLD TRY AND CATCH BLOCK
-	// try {
-	// } catch (error) {
-	// 	res.status(404).json({
-	// 		status: "fail",
-	// 		message: error.message,
-	// 	});
-	// }
-});
+// Calling the generic update function that is defined in the handlerFactory passing in the model:
+exports.updateTour = factory.updateOne(Tour);
 
-exports.getTour = catchAsync(async (req, res, next) => {
-	//Finding by the ID, form the req.params.id (the variable the user inputs in the URL, like /api/v2/5, the 5 will be the req.params.id)
-	//Using populate virtually populate the reviews array with the actual reviews:
-	const tour = await Tour.findById(req.params.id).populate("reviews");
+// Calling the generic delete function that is defined in the handlerFactory passing in the model:
+exports.deleteTour = factory.deleteOne(Tour);
 
-	//If the user inputs a id with the same structure as the tour, but not a valid one, it returns null, not 404:
-	if (!tour) {
-		//Using next, to jump straight into the middleware error handler:
-		return next(new AppError("No tour found with that id", 404));
-	}
+//---------------------------------------------------------------------------------------------------------------//
 
-	res.status(200).json({
-		status: "success",
-		data: {
-			tour: tour,
-		},
-	});
-});
-
-exports.createTour = catchAsync(async (req, res, next) => {
-	//To post a new document to the DB, we can use the create method directly in the instance of the model, and it returns a promise, so we can await it:
-	const newTour = await Tour.create(req.body);
-
-	res.status(201).json({
-		status: "success",
-		data: {
-			tour: newTour,
-		},
-	});
-});
-
-exports.updateTour = catchAsync(async (req, res, next) => {
-	//First we have to find the element by the ID, and then update:
-	const tour = await Tour.findByIdAndUpdate(req.params.id, req.body, {
-		//The third argument can be the options;
-		//Using the new = true, the new updated document is gonna be returned:
-		new: true,
-
-		//Option to use the validators specified in the model:
-		runValidators: true,
-	});
-
-	//If the user inputs a id with the same structure as the tour, but not a valid one, it returns null, not 404:
-	if (!tour) {
-		//Using next, to jump straight into the middleware error handler:
-		return next(new AppError("No tour found with that id", 404));
-	}
-
-	res.status(200).json({
-		status: "success",
-		tour: tour,
-	});
-});
-
-exports.deleteTour = catchAsync(async (req, res, next) => {
-	const tour = await Tour.findByIdAndDelete(req.params.id);
-
-	//If the user inputs a id with the same structure as the tour, but not a valid one, it returns null, not 404:
-	if (!tour) {
-		//Using next, to jump straight into the middleware error handler:
-		return next(new AppError("No tour found with that id", 404));
-	}
-
-	res.status(204).json({
-		status: "success",
-		data: null,
-	});
-});
+//HANDLER FUNCTIONS UNIQUE TO THE TOURS MODEL:
 
 //Handler function to use aggregation pipeline for mongoDB, used by a route in tourRoutes.js:
 exports.getTourStats = catchAsync(async (req, res, next) => {
