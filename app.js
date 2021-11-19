@@ -11,6 +11,7 @@ const mongoSanitize = require("express-mongo-sanitize");
 const xss = require("xss-clean");
 //Package to prevent form parameter pollution, like ?sort=price&sort=duration where it should be sort=price,duration
 const hpp = require("hpp");
+const path = require("path");
 
 //Requiring the AppError Class to handle all the Operational Errors:
 const AppError = require("./utils/appError");
@@ -23,6 +24,13 @@ const reviewRouter = require("./routes/reviewRoutes");
 
 //The express is a function that will assign loads of useful methods to our app variable:
 const app = express();
+
+//Middleware to serve static files, like the overview.html in the public folder:
+app.use(express.static(`${__dirname}/public`));
+
+//Setting the template:
+app.set("view engine", "pug");
+app.set("views", path.join(__dirname, "views"));
 
 //---------------------------------------------------------------------------------------------------------------//
 
@@ -64,9 +72,6 @@ app.use(
 	})
 );
 
-//Middleware to serve static files, like the overview.html in the public folder:
-app.use(express.static(`${__dirname}/public`));
-
 //Creating our own global middleware, when defined at the top, it will execute between all requests:
 app.use((req, res, next) => {
 	//Creating a new date when the request is made, and converting to ISOString:
@@ -76,6 +81,12 @@ app.use((req, res, next) => {
 });
 
 //---------------------------------------------------------------------------------------------------------------//
+
+//Rendering the templates:
+app.get("/", (req, res) => {
+	//We only need to put the name of the file since the path is already defined at the top:
+	res.status(200).render("base");
+});
 
 //Getting the routers from the separate modules:
 
