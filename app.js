@@ -56,6 +56,21 @@ app.use("/api", limiter);
 //Middleware to set the security standards for the header using helmet:
 app.use(helmet());
 
+//--------------------------------------------------------------------//
+//To solve the map rendering error in the client side:
+app.use(
+	helmet.contentSecurityPolicy({
+		directives: {
+			defaultSrc: ["'self'", "https:", "http:", "data:", "ws:"],
+			baseUri: ["'self'"],
+			fontSrc: ["'self'", "https:", "http:", "data:"],
+			scriptSrc: ["'self'", "https:", "http:", "blob:"],
+			styleSrc: ["'self'", "https:", "http:", "unsafe-inline"],
+		},
+	})
+);
+//--------------------------------------------------------------------//
+
 //Just a function tha can modify the incoming data. Also limiting the amount of data tha can come in from the req.body:
 app.use(express.json({ limit: "10kb" }));
 

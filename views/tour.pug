@@ -1,5 +1,11 @@
 extends base
 
+//- MapBox Script and CSS files from their website:
+block append head
+  script(src='https://api.mapbox.com/mapbox-gl-js/v2.3.1/mapbox-gl.js')
+  link(href='https://api.mapbox.com/mapbox-gl-js/v2.3.1/mapbox-gl.css' rel='stylesheet')
+
+
 //- Pug property that lets us reuse pieces of code:
 mixin reviewCard(review)
   .reviews__card
@@ -78,7 +84,9 @@ block content
         img.picture-box__img(src=`/img/tours/${img}`, alt=`${tour.name} ${index + 1}`, class=`picture-box__img--${index + 1}`)
 
   section.section-map
-    #map
+    //- Passing in the data attribute so we can read from the mapbox.js file and render the map accordingly
+    //- Since the locations is an array in the DB, we first convert to string: 
+    #map(data-locations=`${JSON.stringify(tour.locations)}`)
 
   section.section-reviews
     .reviews
