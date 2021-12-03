@@ -12,6 +12,9 @@ const xss = require("xss-clean");
 //Package to prevent form parameter pollution, like ?sort=price&sort=duration where it should be sort=price,duration
 const hpp = require("hpp");
 const path = require("path");
+//To be able to retrieve the jwt that is being passed with the cookies when the user logs in:
+const cookieParser = require("cookie-parser");
+// const cors = require("cors");
 
 //Requiring the AppError Class to handle all the Operational Errors:
 const AppError = require("./utils/appError");
@@ -25,6 +28,17 @@ const viewRouter = require("./routes/viewRoutes");
 
 //The express is a function that will assign loads of useful methods to our app variable:
 const app = express();
+
+//Fixing Cors Errors
+// const corsOpts = {
+// 	origin: "*",
+
+// 	methods: ["GET", "POST", "PUT", "DELETE"],
+
+// 	allowedHeaders: ["Content-Type"],
+// };
+
+// app.use(cors(corsOpts));
 
 //Middleware to serve static files, like the overview.html in the public folder:
 app.use(express.static(`${__dirname}/public`));
@@ -74,6 +88,9 @@ app.use(
 //Just a function tha can modify the incoming data. Also limiting the amount of data tha can come in from the req.body:
 app.use(express.json({ limit: "10kb" }));
 
+//Using the cookieParser
+app.use(cookieParser());
+
 //After reading the data using the middleware above, we can perform data Sanitization, which means cleaning the data from malicious code:
 //Against NoSQL Injection:
 app.use(mongoSanitize());
@@ -92,6 +109,10 @@ app.use(
 app.use((req, res, next) => {
 	//Creating a new date when the request is made, and converting to ISOString:
 	req.requestTime = new Date().toISOString();
+
+	//Logging the cookies with the jwt in the console:
+	console.log(req.cookies);
+
 	//Always calling the next function:
 	next();
 });

@@ -111,6 +111,11 @@ exports.protect = catchAsync(async (req, res, next) => {
 	if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
 		//Then splitting the header string by the space character, and only getting the second part of the string:
 		token = req.headers.authorization.split(" ")[1];
+
+		//Using else if so if there is no bearer, look in the cookies:
+	} else if (req.cookies.jwt) {
+		//So if there is, the token should be the same:
+		token = req.cookies.jwt;
 	}
 
 	//Returning an error if in the header there is no token:
@@ -135,6 +140,36 @@ exports.protect = catchAsync(async (req, res, next) => {
 
 	//Only if after all the steps are ok, then call the next function, granting access to the protected route:
 	req.user = currentUser;
+	next();
+});
+
+//---------------------------------------------------------------------------------------------------------------//
+
+//Middleware to check whether the user is logged in or not, to render the login/signup button if they are not:
+exports.isLoggedIn = catchAsync(async (req, res, next) => {
+	//Always getting the token from the cookies:
+	if (req.cookies.jwt) {
+		//Verify the token:
+		const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
+
+		//Check if the user exists:
+		const currentUser = await User.findById(decoded.id);
+		if (!currentUser) {
+			//If there is an error just move to the next middleware, since its only for rendered pages:
+			return next();
+		}
+
+		//Check if user changed pass after the token was issued:
+		if (currentUser.changedPasswordAfter(decoded.iat)) {
+			//If there is an error just move to the next middleware, since its only for rendered pages:
+			return next();
+		}
+
+		//If it reaches here, it means that there is a logged in user. So making it accessible to the templates:
+		//So every pug template has access to the res.locals, so pass the user variable into it:
+		res.locals.user = currentUser;
+		return next();
+	}
 	next();
 });
 
