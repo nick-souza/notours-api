@@ -117,7 +117,7 @@ app.use((req, res, next) => {
 	req.requestTime = new Date().toISOString();
 
 	//Logging the cookies with the jwt in the console:
-	console.log(req.cookies);
+	// console.log(req.cookies);
 
 	//Always calling the next function:
 	next();

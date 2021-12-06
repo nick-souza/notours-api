@@ -102,6 +102,19 @@ exports.login = catchAsync(async (req, res, next) => {
 
 //---------------------------------------------------------------------------------------------------------------//
 
+//Since the cookie is http only, we cannot delete it from here. So creating a new route to the logout btn to just send a jwt without the signature and short expiration date to act as a delete cookie function:
+exports.logout = (req, res) => {
+	//The new jwt has to have the same name as the one when the user logs in:
+	res.cookie("jwt", "logout", {
+		//Short expiration date:
+		expires: new Date(Date.now() + 10 * 1000),
+		httpOnly: true,
+	});
+	res.status(200).json({ status: "success" });
+};
+
+//---------------------------------------------------------------------------------------------------------------//
+
 //Middleware function to only allow the user that is logged in, to access the getAllTours route:
 exports.protect = catchAsync(async (req, res, next) => {
 	//First, getting the token and check if its there. Getting from the req.headers, always using the format: Authorization - Bearer "and the token":
@@ -146,32 +159,36 @@ exports.protect = catchAsync(async (req, res, next) => {
 //---------------------------------------------------------------------------------------------------------------//
 
 //Middleware to check whether the user is logged in or not, to render the login/signup button if they are not:
-exports.isLoggedIn = catchAsync(async (req, res, next) => {
+exports.isLoggedIn = async (req, res, next) => {
 	//Always getting the token from the cookies:
 	if (req.cookies.jwt) {
-		//Verify the token:
-		const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
+		try {
+			//Verify the token:
+			const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
 
-		//Check if the user exists:
-		const currentUser = await User.findById(decoded.id);
-		if (!currentUser) {
-			//If there is an error just move to the next middleware, since its only for rendered pages:
+			//Check if the user exists:
+			const currentUser = await User.findById(decoded.id);
+			if (!currentUser) {
+				//If there is an error just move to the next middleware, since its only for rendered pages:
+				return next();
+			}
+
+			//Check if user changed pass after the token was issued:
+			if (currentUser.changedPasswordAfter(decoded.iat)) {
+				//If there is an error just move to the next middleware, since its only for rendered pages:
+				return next();
+			}
+
+			//If it reaches here, it means that there is a logged in user. So making it accessible to the templates:
+			//So every pug template has access to the res.locals, so pass the user variable into it:
+			res.locals.user = currentUser;
+			return next();
+		} catch (error) {
 			return next();
 		}
-
-		//Check if user changed pass after the token was issued:
-		if (currentUser.changedPasswordAfter(decoded.iat)) {
-			//If there is an error just move to the next middleware, since its only for rendered pages:
-			return next();
-		}
-
-		//If it reaches here, it means that there is a logged in user. So making it accessible to the templates:
-		//So every pug template has access to the res.locals, so pass the user variable into it:
-		res.locals.user = currentUser;
-		return next();
 	}
 	next();
-});
+};
 
 //---------------------------------------------------------------------------------------------------------------//
 

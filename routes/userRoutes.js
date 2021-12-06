@@ -18,6 +18,8 @@ const router = express.Router();
 router.post("/signup", authController.signup);
 //Route for the login, again just using post because we need the req.body:
 router.post("/login", authController.login);
+//Route for "logging out":
+router.get("/logout", authController.logout);
 
 //Route to redefine the user password:
 router.post("/forgotPassword", authController.forgotPassword);
