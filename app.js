@@ -16,6 +16,8 @@ const path = require("path");
 const cookieParser = require("cookie-parser");
 // const cors = require("cors");
 
+//---------------------------------------------------------------------------------------------------------------//
+
 //Requiring the AppError Class to handle all the Operational Errors:
 const AppError = require("./utils/appError");
 //Requiring the ErrorController module:
@@ -25,6 +27,8 @@ const tourRouter = require("./routes/tourRoutes");
 const userRouter = require("./routes/userRoutes");
 const reviewRouter = require("./routes/reviewRoutes");
 const viewRouter = require("./routes/viewRoutes");
+
+//---------------------------------------------------------------------------------------------------------------//
 
 //The express is a function that will assign loads of useful methods to our app variable:
 const app = express();
@@ -71,6 +75,7 @@ app.use("/api", limiter);
 app.use(helmet());
 
 //--------------------------------------------------------------------//
+
 //To solve the map rendering error in the client side:
 app.use(
 	helmet.contentSecurityPolicy({
@@ -83,6 +88,7 @@ app.use(
 		},
 	})
 );
+
 //--------------------------------------------------------------------//
 
 //Just a function tha can modify the incoming data. Also limiting the amount of data tha can come in from the req.body:

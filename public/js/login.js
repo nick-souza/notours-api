@@ -1,5 +1,7 @@
+import axios from "axios";
+
 //Function tha performs the login:
-const login = async (email, password) => {
+export const login = async (email, password) => {
 	//Using the axios library that we imported in the base file:
 
 	try {
@@ -28,13 +30,3 @@ const login = async (email, password) => {
 		alert(error.response.data.message);
 	}
 };
-
-//Selecting the form in the template and listening fot the submit action:
-document.querySelector(".form").addEventListener("submit", (e) => {
-	e.preventDefault();
-
-	const email = document.getElementById("email").value;
-	const password = document.getElementById("password").value;
-
-	login(email, password);
-});
